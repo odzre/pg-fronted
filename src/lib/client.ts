@@ -17,6 +17,13 @@ export async function clientFetch<T>(path: string, options?: RequestInit): Promi
     },
   });
 
+  // Sesi berakhir (token expired) → kembali ke login.
+  // Kecuali endpoint auth sendiri (401 di sana = kredensial salah).
+  if (res.status === 401 && !path.startsWith("/api/auth/")) {
+    window.location.href = "/login";
+    throw new Error("Sesi berakhir, mengalihkan ke halaman login...");
+  }
+
   const json = (await res.json().catch(() => null)) as Envelope<T> | null;
 
   if (!res.ok || !json?.success) {

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import type {
   ApiKeyInfo,
@@ -44,6 +45,14 @@ async function request<T>(path: string, options: RequestInit = {}, withAuth = tr
   }
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers, cache: "no-store" });
+
+  // Token invalid/expired → bersihkan session, arahkan ke halaman login.
+  // (Hanya untuk request ter-autentikasi; 401 saat login = kredensial salah.)
+  if (res.status === 401 && withAuth) {
+    const session = await getSession();
+    await session.destroy();
+    redirect("/login");
+  }
 
   const json = (await res.json().catch(() => null)) as Envelope<T> | null;
 
